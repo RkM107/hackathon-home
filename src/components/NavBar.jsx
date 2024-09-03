@@ -7,21 +7,25 @@ const NavBar = () => {
       <nav className="container mx-auto p-4 px-8">
         {/* Flex Container */}
         <div className="flex items-baseline space-x-8">
-          <a href="#" className="mr-auto font-bold">
-            DataSynthAI
-          </a>
-          <a href="#" className="hover:text-highlightRed font-medium">
-            Upload Schema
-          </a>
-          <a href="#" className="hover:text-highlightRed font-medium">
-            Generate Data
-          </a>
-          <a href="#" className="hover:text-highlightRed font-medium">
-            Guide
-          </a>
-          <a href="#" className="hover:text-highlightRed font-medium">
-            About
-          </a>
+          <div className="w-1/2">
+            <a href="#" className="mr-auto font-bold">
+              DataSynthAI
+            </a>
+          </div>
+          <div className="flex w-1/2 justify-center space-x-8">
+            <a href="#" className="font-medium hover:text-highlightRed">
+              Upload Schema
+            </a>
+            <a href="#" className="font-medium hover:text-highlightRed">
+              Generate Data
+            </a>
+            <a href="#" className="font-medium hover:text-highlightRed">
+              Guide
+            </a>
+            <a href="#" className="font-medium hover:text-highlightRed">
+              About
+            </a>
+          </div>
         </div>
       </nav>
     </>

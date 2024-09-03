@@ -4,7 +4,7 @@ const FooterSection = () => {
   return (
     <footer className="bg-veryDarkBlue">
       {/* <!-- Flex Container --> */}
-      <div class="container mx-auto flex px-8 py-6">
+      <div className="container mx-auto flex px-8 py-6">
         {/* <!-- Logo and Copyright container --> */}
         <div className="w-1/2 self-center">
           <h2 className="text-center text-2xl font-semibold text-white">

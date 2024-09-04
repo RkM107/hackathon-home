@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
 import Papa from "papaparse";
+import { v4 as uuidv4 } from "uuid";
+import Toast from "./Toast";
+import FileDownloader from "./FileDownloader";
 
 const FileUploadSection = () => {
   const [file, setFile] = useState(null);
@@ -9,6 +12,10 @@ const FileUploadSection = () => {
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedFormat, setSelectedFormat] = useState("");
   const [isCSV, setIsCSV] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [generationId, setGenerationId] = useState(null);
+  const [showDownloader, setShowDownloader] = useState(false);
 
   const handleFileChange = async (event) => {
     const uploadedFile = event.target.files[0];
@@ -56,7 +63,7 @@ const FileUploadSection = () => {
             setIsFileValid(true);
             setIsCSV(uploadedFile.type === "text/csv");
             if (uploadedFile.type === "text/csv") {
-              setSelectedModel("gpt-4");
+              setSelectedModel("Gaussian");
             } else {
               setSelectedModel("");
             }
@@ -76,36 +83,84 @@ const FileUploadSection = () => {
 
   const handleSubmit = async () => {
     if (file && isFileValid && selectedModel && selectedFormat) {
+      setIsLoading(true);
       try {
         // Read the file content
         const fileContent = await readFileContent(file);
 
+        // Convert fileContent to string
+        let fileDataString;
+        if (typeof fileContent === "object") {
+          fileDataString = JSON.stringify(fileContent);
+        } else if (Array.isArray(fileContent)) {
+          // For CSV files, convert array to JSON string
+          fileDataString = JSON.stringify(fileContent);
+        } else {
+          fileDataString = String(fileContent);
+        }
+
+        // Generate a unique ID for this generation
+        const uniqueId = uuidv4();
+
+        // Store the uniqueId in localStorage
+        localStorage.setItem("lastGenerationId", uniqueId);
+
         // Prepare the request payload
         const payload = {
-          fileData: fileContent,
+          fileData: fileDataString,
           selectedModel: selectedModel,
           selectedFormat: selectedFormat,
           fileName: file.name,
+          generationId: uniqueId,
         };
 
-        console.log("Payload: ", JSON.stringify(payload, null, 2));
+        console.log("Payload: ", payload);
 
         // Send POST request to dummy endpoint
-        // const response = await axios.post(
-        //   "https://dummy-endpoint.com/generate-data",
-        //   payload,
-        //   {
-        //     headers: {
-        //       "Content-Type": "application/json",
-        //     },
-        //   },
-        // );
+        const response = await axios.post(
+          "https://dummy-endpoint.com/generate-data",
+          payload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
-        // console.log("Response:", response.data);
-        // Handle the response as needed (e.g., show success message, download generated data)
+        console.log("Response:", response.data);
+        setToast({
+          message:
+            "Schema Validated Successfully! Please wait while we generate your data",
+          type: "success",
+        });
+
+        // Start the download process
+        setGenerationId(uniqueId);
+        setShowDownloader(true);
       } catch (error) {
         console.error("Error generating data:", error);
-        // Handle error (e.g., show error message to user)
+        // Show error message to user
+        let errorMessage =
+          "There was an error in your schema. Please try again.";
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          errorMessage =
+            error.response.data.message || error.response.data || errorMessage;
+        } else if (error.request) {
+          // The request was made but no response was received
+          errorMessage =
+            "No response received from server. Please try again later.";
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          errorMessage = error.message || errorMessage;
+        }
+        setToast({
+          message: errorMessage,
+          type: "error",
+        });
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -148,6 +203,12 @@ const FileUploadSection = () => {
     setIsFileValid(false);
     setSelectedModel("");
     setSelectedFormat("");
+  };
+
+  const handleDownloadComplete = () => {
+    setShowDownloader(false);
+    setGenerationId(null);
+    // Additional actions after download if needed
   };
 
   let buttonColorClass =
@@ -226,11 +287,8 @@ const FileUploadSection = () => {
                   disabled={isCSV}
                 >
                   <option value="">Choose a model</option>
-                  {!isCSV && (
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                  )}
-                  <option value="gpt-4">GPT-4</option>
-                  {!isCSV && <option value="claude-v1">Claude v1</option>}
+                  <option value="Gaussian">GAUSSIAN</option>
+                  {!isCSV && <option value="Ctgan">CTGAN</option>}
                 </select>
               </div>
               <div className="w-64">
@@ -249,7 +307,6 @@ const FileUploadSection = () => {
                   <option value="">Choose a format</option>
                   <option value="json">JSON</option>
                   <option value="csv">CSV</option>
-                  <option value="txt">TXT</option>
                 </select>
               </div>
             </div>
@@ -261,23 +318,52 @@ const FileUploadSection = () => {
           <button
             className={
               "rounded-lg px-6 py-2 text-white shadow-lg transition duration-300 " +
-              buttonColorClass
+              (isLoading ? "cursor-not-allowed bg-gray-400" : buttonColorClass)
             }
             onClick={handleSubmit}
             disabled={
-              !file || !isFileValid || !selectedModel || !selectedFormat
+              !file ||
+              !isFileValid ||
+              !selectedModel ||
+              !selectedFormat ||
+              isLoading
             }
           >
-            {isFileValid ? "Generate Data" : "Submit"}
+            {isLoading ? (
+              <>
+                <span className="mr-2 inline-block animate-spin">&#9696;</span>
+                Generating...
+              </>
+            ) : (
+              "Generate Data"
+            )}
           </button>
           <button
             className="rounded-lg bg-gray-200 px-6 py-2 text-gray-800 transition duration-300 hover:bg-gray-300"
             onClick={handleClear}
+            disabled={isLoading}
           >
             Clear
           </button>
         </div>
       </div>
+
+      {/* FileDownloader component */}
+      {showDownloader && (
+        <FileDownloader
+          generationId={generationId}
+          onDownloadComplete={handleDownloadComplete}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </section>
   );
 };

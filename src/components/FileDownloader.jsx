@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
 const FileDownloader = ({ generationId, onDownloadComplete }) => {
   const [fileStatus, setFileStatus] = useState("checking");
   const [progress, setProgress] = useState(0);
-  const [pollingInterval, setPollingInterval] = useState(null);
+  const pollingIntervalRef = useRef(null);
+  const downloadedRef = useRef(false);
 
   useEffect(() => {
     if (generationId) {
       startPolling();
     }
     return () => {
-      if (pollingInterval) clearInterval(pollingInterval);
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
     };
   }, [generationId]);
 
@@ -36,11 +37,12 @@ const FileDownloader = ({ generationId, onDownloadComplete }) => {
   }, [fileStatus]);
 
   const startPolling = () => {
-    const interval = setInterval(checkFile, 10000); // Check every 10 seconds
-    setPollingInterval(interval);
+    pollingIntervalRef.current = setInterval(checkFile, 10000); // Check every 10 seconds
   };
 
   const checkFile = async () => {
+    if (downloadedRef.current) return;
+
     try {
       const response = await axios.get(
         `http://your-server-url/file/${generationId}`,
@@ -50,33 +52,46 @@ const FileDownloader = ({ generationId, onDownloadComplete }) => {
       );
 
       const contentType = response.headers["content-type"];
-      const jsonResponse = JSON.parse(await response.data.text());
+      const blob = response.data;
 
-      if (jsonResponse.status === "ready") {
+      if (contentType === "application/json") {
+        const jsonText = await blob.text();
+        const jsonData = JSON.parse(jsonText);
+
+        if (jsonData.status === "ready") {
+          setFileStatus("ready");
+          clearInterval(pollingIntervalRef.current);
+          downloadFile(blob, contentType, "json");
+          downloadedRef.current = true;
+          onDownloadComplete();
+        } else {
+          setFileStatus("processing");
+        }
+      } else if (contentType === "text/csv") {
         setFileStatus("ready");
-        clearInterval(pollingInterval);
-        downloadFile(response.data, contentType);
+        clearInterval(pollingIntervalRef.current);
+        downloadFile(blob, contentType, "csv");
+        downloadedRef.current = true;
+        onDownloadComplete();
       } else {
-        setFileStatus("processing");
+        throw new Error("Unexpected content type");
       }
     } catch (error) {
       console.error("File check/download error:", error);
       setFileStatus("error");
+      clearInterval(pollingIntervalRef.current);
     }
   };
 
-  const downloadFile = (data, contentType) => {
-    const blob = new Blob([data], { type: contentType });
+  const downloadFile = (blob, contentType, fileExtension) => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const fileExtension = contentType === "text/csv" ? "csv" : "json";
     link.href = url;
     link.setAttribute("download", `data_${generationId}.${fileExtension}`);
     document.body.appendChild(link);
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
-    onDownloadComplete();
   };
 
   return (

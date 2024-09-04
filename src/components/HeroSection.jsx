@@ -38,7 +38,11 @@ const HeroSection = () => {
         </div>
         {/* Image */}
         <div className="w-1/2">
-          <h2 className="text-center font-semibold"> Image Goes Here</h2>
+          <img
+            src="https://images.unsplash.com/photo-1518186285589-2f7649de83e0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+            alt="Turned on flat screen monitor showing Bitcoin stats"
+            className="h-auto w-full rounded-lg shadow-lg"
+          />
         </div>
       </div>
     </section>

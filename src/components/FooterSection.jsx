@@ -2,7 +2,7 @@ import React from "react";
 
 const FooterSection = () => {
   return (
-    <footer className="bg-veryDarkBlue">
+    <footer className="bg-veryDarkBlue" id="footer">
       {/* <!-- Flex Container --> */}
       <div className="container mx-auto flex px-8 py-6">
         {/* <!-- Logo and Copyright container --> */}

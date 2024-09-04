@@ -65,7 +65,7 @@ const FileUploadSection = () => {
             if (uploadedFile.type === "text/csv") {
               setSelectedModel("Gaussian");
             } else {
-              setSelectedModel("");
+              setSelectedModel("Ctgan");
             }
           }
         } catch (error) {
@@ -217,7 +217,7 @@ const FileUploadSection = () => {
       : "bg-brightRed";
 
   return (
-    <section className="my-10 mb-20 px-8">
+    <section className="my-10 mb-20 px-8" id="file-upload">
       <div className="container mx-auto max-w-lg text-center">
         <h2 className="mb-4 text-2xl font-semibold">Upload Your Schema</h2>
         <p className="mb-6 text-gray-500">
@@ -277,7 +277,7 @@ const FileUploadSection = () => {
                   htmlFor="aiModel"
                   className="mb-2 block text-left text-sm font-medium text-gray-900"
                 >
-                  Select AI Model
+                  Select Model
                 </label>
                 <select
                   id="aiModel"
@@ -287,7 +287,7 @@ const FileUploadSection = () => {
                   disabled={isCSV}
                 >
                   <option value="">Choose a model</option>
-                  <option value="Gaussian">GAUSSIAN</option>
+                  {isCSV && <option value="Gaussian">GAUSSIAN</option>}
                   {!isCSV && <option value="Ctgan">CTGAN</option>}
                 </select>
               </div>

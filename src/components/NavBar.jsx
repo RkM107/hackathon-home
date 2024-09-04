@@ -13,16 +13,19 @@ const NavBar = () => {
             </a>
           </div>
           <div className="flex w-1/2 justify-center space-x-8">
-            <a href="#" className="font-medium hover:text-highlightRed">
+            <a
+              href="#file-upload"
+              className="font-medium hover:text-highlightRed"
+            >
               Upload Schema
             </a>
             <a href="#" className="font-medium hover:text-highlightRed">
               Generate Data
             </a>
-            <a href="#" className="font-medium hover:text-highlightRed">
+            <a href="#guide" className="font-medium hover:text-highlightRed">
               Guide
             </a>
-            <a href="#" className="font-medium hover:text-highlightRed">
+            <a href="#footer" className="font-medium hover:text-highlightRed">
               About
             </a>
           </div>

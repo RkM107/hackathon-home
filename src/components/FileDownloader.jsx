@@ -50,15 +50,14 @@ const FileDownloader = ({ generationId, onDownloadComplete }) => {
       );
 
       const contentType = response.headers["content-type"];
-      if (contentType === "application/json") {
-        // File is not ready yet
-        const jsonResponse = JSON.parse(await response.data.text());
-        setFileStatus("processing");
-      } else {
-        // File is ready, download it
+      const jsonResponse = JSON.parse(await response.data.text());
+
+      if (jsonResponse.status === "ready") {
         setFileStatus("ready");
         clearInterval(pollingInterval);
-        downloadFile(response.data);
+        downloadFile(response.data, contentType);
+      } else {
+        setFileStatus("processing");
       }
     } catch (error) {
       console.error("File check/download error:", error);
@@ -66,11 +65,13 @@ const FileDownloader = ({ generationId, onDownloadComplete }) => {
     }
   };
 
-  const downloadFile = (blob) => {
+  const downloadFile = (data, contentType) => {
+    const blob = new Blob([data], { type: contentType });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
+    const fileExtension = contentType === "text/csv" ? "csv" : "json";
     link.href = url;
-    link.setAttribute("download", `data_${generationId}.csv`);
+    link.setAttribute("download", `data_${generationId}.${fileExtension}`);
     document.body.appendChild(link);
     link.click();
     link.remove();
